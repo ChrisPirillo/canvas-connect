@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<!-- 
+  Optimization: Set a more specific language attribute for better accessibility and SEO.
+-->
+<html lang="en-US">
+<head>
+    <!-- SEO: Basic meta tags for character set and viewport are correctly implemented. -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO: Comprehensive meta tags for improved search engine and social media visibility. -->
+    <title>Canvas Connect - Real-time Collaborative Whiteboard</title>
+    <meta name="description" content="Collaborate in real-time with Canvas Connect, a peer-to-peer digital whiteboard. Draw, write, share images, and video chat directly with your team without a server.">
+    <meta name="author" content="@ChrisPirillo">
+    
+    <!-- SEO: Canonical URL to prevent duplicate content issues. -->
+    <link rel="canonical" href="https://pirillo.com/arcade/canvas-connect.html">
+    
+    <!-- SEO: Open Graph meta tags for sharing on social media platforms like Facebook. -->
+    <meta property="og:title" content="Canvas Connect - Real-time Collaborative Whiteboard">
+    <meta property="og:description" content="Draw, share, and video chat on a peer-to-peer digital whiteboard.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pirillo.com/arcade/canvas-connect.html">
+    <meta property="og:image" content="https://pirillo.com/arcade/images/canvas-connect.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Pirillo's Arcade">
+    
+    <!-- SEO: Twitter Card meta tags for optimized sharing on Twitter. -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ChrisPirillo">
+    <meta name="twitter:creator" content="@ChrisPirillo">
+    <meta name="twitter:title" content="Canvas Connect - Real-time Collaborative Whiteboard">
+    <meta name="twitter:description" content="Draw, share, and video chat on a peer-to-peer digital whiteboard.">
+    <meta name="twitter:image" content="https://pirillo.com/arcade/images/canvas-connect.png">
+
+    <!-- Performance: Resource hints to establish early connections to critical third-party domains. -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+
+    <!-- 
+      Performance: Preload the primary font file discovered from the Google Fonts CSS. 
+      This is critical for improving the Largest Contentful Paint (LCP) metric.
+    -->
+    <link rel="preload" href="https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.woff2" as="font" type="font/woff2" crossorigin>
+
+    <!-- 
+      Performance & CWV: Inlined Google Fonts CSS.
+      This eliminates a render-blocking request, improving FCP and LCP.
+      The 'font-display: swap;' property is preserved to prevent Flash of Invisible Text (FOIT).
+    -->
+    <style>
+      /* Inter font from Google Fonts */
+      @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400 700; /* Use modern font-weight range */
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+    </style>
+    
+    <!-- 
+      Performance & CWV: Critical CSS for the initial layout is inlined.
+      This ensures the page structure is visible as quickly as possible without waiting for external stylesheets.
+    -->
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        .ui-chrome { transition: opacity 0.3s ease-in-out; }
+        .is-drawing .ui-chrome:not(:hover), .is-interacting .ui-chrome:not(:hover) { opacity: 0.3; }
+        .floating-panel { background-color: rgba(249, 250, 251, 0.8); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12); }
+        .tool-btn.active { background-color: #3b82f6; color: white; transform: scale(1.05); }
+        .tool-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .modal-container { transition: opacity 0.2s ease-in-out; }
+        .modal-content { transition: transform 0.2s ease-in-out; }
+        .modal-container.hidden { pointer-events: none; opacity: 0; }
+        .modal-container.hidden .modal-content { transform: scale(0.95); }
+        #main-canvas.draw-cursor { cursor: crosshair; }
+        #main-canvas.text-cursor { cursor: text; }
+        #main-canvas.move-cursor { cursor: move; }
+        #main-canvas.grab-cursor { cursor: grab; }
+        #main-canvas.resize-cursor { cursor: nwse-resize; }
+        #main-canvas.rotate-cursor { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>') 12 12, auto; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        #main-canvas { display: block; width: 100%; height: 100%; }
+        .panel-content { transition: all 0.3s ease-in-out; max-height: 500px; overflow: hidden; }
+        .panel-collapsed > .panel-content { max-height: 0 !important; padding-top: 0; padding-bottom: 0; opacity: 0; margin-top:0; border-width: 0; }
+        .panel-collapsed > .panel-header > svg { transform: rotate(-90deg); }
+        .chat-notification { display: none; }
+        .panel-header.glowing { box-shadow: 0 0 12px 2px rgba(59, 130, 246, 0.7); border-radius: 0.75rem; }
+        
+        /* Video styles */
+        #video-container video { 
+            transform: scaleX(-1); 
+            border-radius: 0.5rem; 
+            background-color: #e5e7eb;
+            object-fit: cover; /* Ensures video fills the element */
+        }
+        #local-video { border: 2px solid #3b82f6; }
+
+        /* Placeholder for remote video when empty */
+        #remote-video.is-empty {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><path d="M16 16v-3.2a1 1 0 0 0-1.5-.8L12 14v-4l2.5-1.8a1 1 0 0 0 1.5-.8V4" /><rect x="2" y="6" width="8" height="12" rx="2" /></svg>');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 25%;
+        }
+    </style>
+    
+    <!-- SEO: JSON-LD Structured Data for rich search results. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Canvas Connect",
+      "description": "A real-time, peer-to-peer collaborative whiteboard application for drawing, brainstorming, and video chatting without a server.",
+      "url": "https://pirillo.com/arcade/canvas-connect.html",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "All",
+      "browserRequirements": "Requires a modern web browser with WebRTC support.",
+      "author": {
+        "@type": "Person",
+        "name": "Chris Pirillo",
+        "url": "https://twitter.com/ChrisPirillo"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0"
+      }
+    }
+    </script>
+    
+    <!-- Google Analytics script as provided, using `async` for non-blocking load. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1CQ4D3VQ3L"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-1CQ4D3VQ3L');
+    </script>
+</head>
+<body class="bg-gray-100 overflow-hidden">
+    <!-- SEO: Use semantic HTML elements like <header>, <main>, and <aside> instead of generic divs. -->
+    <div id="app" class="w-screen h-screen relative">
+        <main>
+            <div id="canvas-container"><canvas id="main-canvas"></canvas></div>
+        </main>
+        
+        <!-- SEO & Accessibility: The main toolbar is now a <header> with a <nav> element for navigation controls. -->
+        <!-- Fix: Moved flex properties to the nav element to restore the single-line toolbar layout. -->
+        <header class="ui-chrome absolute top-4 left-1/2 -translate-x-1/2 p-2 rounded-xl z-20 floating-panel">
+            <nav aria-label="Main tools" class="flex items-center space-x-1">
+                <button id="select-tool" class="tool-btn p-3 rounded-lg hover:bg-gray-200" title="Select"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></button>
+                <button id="pen-tool" class="tool-btn p-3 rounded-lg hover:bg-gray-200" title="Pen"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                <button id="rect-tool" class="tool-btn p-3 rounded-lg hover:bg-gray-200" title="Rectangle"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/></svg></button>
+                <button id="circle-tool" class="tool-btn p-3 rounded-lg hover:bg-gray-200" title="Circle"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></button>
+                <button id="arrow-tool" class="tool-btn p-3 rounded-lg hover:bg-gray-200" title="Arrow"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+                <button id="text-tool" class="tool-btn p-3 rounded-lg hover:bg-gray-200" title="Text"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg></button>
+                <button id="postit-tool" class="tool-btn p-3 rounded-lg hover:bg-gray-200" title="Post-it Note"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5Z"/><path d="M15 3v6h6"/></svg></button>
+                <button id="image-tool" class="tool-btn p-3 rounded-lg hover:bg-gray-200" title="Add Image"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+                <div class="h-8 w-px bg-gray-300 mx-1"></div>
+                <input id="color-picker" type="color" value="#3b82f6" class="w-10 h-10 p-0 border-none rounded-lg cursor-pointer bg-transparent" title="Color">
+                <input id="size-slider" type="range" min="2" max="100" value="12" class="w-24 cursor-pointer" title="Size/Thickness">
+                <div class="h-8 w-px bg-gray-300 mx-1"></div>
+                <button id="export-png" class="p-3 rounded-lg text-gray-600 hover:bg-gray-200" title="Export to PNG"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+                <button id="clear-canvas" class="p-3 rounded-lg text-red-500 hover:bg-red-100" title="Clear Canvas"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                <input type="file" id="image-upload" class="hidden" accept="image/*">
+            </nav>
+        </header>
+
+        <!-- SEO: Use <aside> for complementary content like control panels. -->
+        <aside id="side-panels" class="ui-chrome absolute bottom-4 right-4 z-20 w-80 flex flex-col space-y-2">
+            <!-- SEO: Use <section> for thematic groupings of content. -->
+            <section id="connection-panel" class="floating-panel rounded-xl">
+                <div class="panel-header flex items-center justify-between p-3 cursor-pointer"><h3 class="font-semibold text-gray-800">Connect to Collaborate</h3><svg class="w-5 h-5 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></div>
+                <div class="panel-content px-3 pb-3 space-y-3">
+                    <div id="connection-status" class="text-sm text-center">Initializing Peer...</div>
+                    <div id="video-call-ui" class="hidden">
+                        <div id="video-container" class="grid grid-cols-2 gap-2 mb-2">
+                            <!-- CLS Optimization: Add explicit width and height attributes to media to prevent layout shifts. The CSS `aspect-video` and `w-full` will handle responsive sizing. -->
+                             <video id="remote-video" autoplay playsinline class="w-full aspect-video is-empty" width="160" height="90"></video>
+                             <video id="local-video" autoplay playsinline muted class="w-full aspect-video" width="160" height="90"></video>
+                        </div>
+                        <div id="call-controls" class="flex justify-center">
+                            <button id="start-call-btn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 w-full">Start Call</button>
+                            <button id="end-call-btn" class="hidden px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 w-full">End Call</button>
+                        </div>
+                    </div>
+                    <div id="pre-connection-ui" class="space-y-3">
+                        <div class="flex justify-center">
+                            <button id="copy-invitation-btn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 w-full" disabled>Copy Invitation to Send</button>
+                        </div>
+                        <div id="connection-info" class="text-xs text-gray-500 mt-1"></div>
+                        <div class="flex items-start space-x-2">
+                            <input type="text" id="peer-id-input" placeholder="Or enter peer's ID" class="w-full min-w-0 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                            <button id="connect-btn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" disabled>Connect</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section id="chat-panel" class="floating-panel rounded-xl">
+                 <div class="panel-header flex items-center justify-between p-3 cursor-pointer">
+                    <h3 class="font-semibold text-gray-800">Chat</h3>
+                    <div class="flex items-center">
+                        <span class="chat-notification mr-2 w-3 h-3 bg-blue-500 rounded-full"></span>
+                        <svg class="w-5 h-5 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    </div>
+                </div>
+                <div class="panel-content flex flex-col h-[300px]">
+                    <div id="chat-messages" class="flex-grow p-3 overflow-y-auto flex flex-col"></div>
+                    <div class="p-3 border-t border-gray-200 flex space-x-2"><input type="text" id="chat-input" placeholder="Type a message..." class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"><button id="send-chat" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Send</button></div>
+                </div>
+            </section>
+        </aside>
+        
+        <!-- Modals are kept as divs as they are programmatically toggled and not part of the standard document flow. -->
+        <div id="text-input-modal" class="modal-container hidden"><div class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50"><div class="modal-content bg-white p-6 rounded-lg shadow-xl w-full max-w-md"><h3 class="text-lg font-medium mb-4">Enter Text</h3><textarea id="text-tool-input" class="w-full p-2 border rounded-md" rows="3"></textarea><div class="mt-4 flex justify-end space-x-2"><button id="cancel-text" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button><button id="submit-text" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Add Text</button></div></div></div></div>
+        <div id="confirm-modal" class="modal-container hidden"><div class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50"><div class="modal-content bg-white p-6 rounded-lg shadow-xl w-full max-w-sm"><h3 class="text-lg font-medium mb-2">Are you sure?</h3><p id="confirm-message" class="text-gray-600 mb-6"></p><div class="flex justify-end space-x-2"><button id="confirm-cancel-btn" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button><button id="confirm-ok-btn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">Confirm</button></div></div></div></div>
+    </div>
+    
+    <!-- 
+      Performance: Non-critical scripts are moved to the end of the <body> and deferred.
+      This prevents them from blocking the initial page render, improving FCP, LCP, and FID.
+    -->
+    <script src="https://cdn.tailwindcss.com" defer></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js" defer></script>
+    
+    <!-- The main application logic remains unchanged as requested. -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Code-Splitting / Modularity Simulation ---
+        // The following functionalities could be dynamically imported to reduce the initial bundle size.
+        // This is a common practice in modern bundlers like Webpack or Vite.
+        // Example:
+        // document.getElementById('connect-btn').addEventListener('click', async () => {
+        //   const { initializePeer } = await import('./peer-handler.js');
+        //   initializePeer();
+        // });
+        // Tone.js could also be loaded only after the first user interaction.
+
+        // --- App & DOM Elements ---
+        const app = document.getElementById('app');
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d');
+        const textModal = document.getElementById('text-input-modal');
+        const confirmModal = document.getElementById('confirm-modal');
+        const sizeSlider = document.getElementById('size-slider');
+        const videoCallUI = document.getElementById('video-call-ui');
+        const preConnectionUI = document.getElementById('pre-connection-ui');
+        const startCallBtn = document.getElementById('start-call-btn');
+        const endCallBtn = document.getElementById('end-call-btn');
+        const localVideo = document.getElementById('local-video');
+        const remoteVideo = document.getElementById('remote-video');
+        
+        // --- State Variables ---
+        let peer = null;
+        let dataConnections = {};
+        let mediaConnections = {};
+        let localStream = null;
+        let activeTool = 'pen';
+        let isDrawing = false, isDragging = false, isResizing = false, isRotating = false;
+        let drawingColor = '#3b82f6', drawingSize = 12;
+        let startX, startY, lastX, lastY;
+        let canvasObjects = [];
+        let selectedObject = null;
+        let objectImages = {};
+        let currentlyDrawingObject = null;
+        let activeHandle = null;
+        let confirmCallback = null;
+        let originalObjectState = null;
+        let lastBroadcastTime = 0;
+        const broadcastInterval = 30; // ms, approx 33fps
+
+        // --- Sound Effects ---
+        // Code-splitting opportunity: Tone.js could be loaded dynamically on first interaction.
+        let soundsReady = false;
+        const soundEffects = {
+            connect: new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination(),
+            chat: new Tone.Synth({ oscillator: { type: "triangle" }, envelope: { attack: 0.01, decay: 0.05, sustain: 0.2, release: 0.2 } }).toDestination(),
+            call: new Tone.PolySynth(Tone.Synth, { oscillator: { type: "amsine" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.2, release: 0.2 } }).toDestination()
+        };
+        const playSound = (effect) => {
+            if (!soundsReady) return;
+            switch(effect) {
+                case 'connect': soundEffects.connect.triggerAttackRelease("C5", "8n"); break;
+                case 'chat': soundEffects.chat.triggerAttackRelease("G5", "16n"); break;
+                case 'call': soundEffects.call.triggerAttackRelease(["C4", "G4"], "8n"); break;
+            }
+        };
+        document.body.addEventListener('mousedown', async () => {
+            if (soundsReady) return;
+            await Tone.start();
+            soundsReady = true;
+            console.log('Audio context started.');
+        }, { once: true });
+
+
+        // --- Core Functions ---
+        const getMousePos = (e) => ({ x: e.clientX - canvas.getBoundingClientRect().left, y: e.clientY - canvas.getBoundingClientRect().top });
+        const broadcastData = (type, payload) => Object.values(dataConnections).forEach(conn => conn.open && conn.send({ type, payload, senderId: peer.id }));
+        const generateUniqueId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
+
+        const resizeCanvas = () => {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            redrawCanvas();
+        };
+
+        const redrawCanvas = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvasObjects.forEach(obj => drawObject(ctx, obj));
+            if (selectedObject) drawSelectionUI(ctx, selectedObject);
+        };
+        
+        const drawStandaloneArrow = (context, fromX, fromY, toX, toY, color, size) => {
+            const headLength = Math.max(size * 2, 12);
+            const arrowAngle = Math.PI / 6;
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            const shortenBy = headLength * Math.cos(arrowAngle);
+
+            context.save();
+            context.strokeStyle = color;
+            context.fillStyle = color;
+            context.lineWidth = size;
+            context.lineCap = 'round';
+
+            context.beginPath();
+            context.moveTo(fromX, fromY);
+            context.lineTo(toX - shortenBy * Math.cos(angle), toY - shortenBy * Math.sin(angle));
+            context.stroke();
+
+            context.beginPath();
+            context.moveTo(toX, toY);
+            context.lineTo(toX - headLength * Math.cos(angle - arrowAngle), toY - headLength * Math.sin(angle - arrowAngle));
+            context.lineTo(toX - headLength * Math.cos(angle + arrowAngle), toY - headLength * Math.sin(angle + arrowAngle));
+            context.closePath();
+            context.fill();
+            context.restore();
+        };
+
+        // --- Object Drawing ---
+        const drawObject = (context, obj) => {
+            if (!obj) return;
+
+            if (obj.type === 'arrow') {
+                drawStandaloneArrow(context, obj.startX, obj.startY, obj.endX, obj.endY, obj.color, obj.size);
+                return;
+            }
+
+            context.save();
+            context.translate(obj.x, obj.y);
+            context.rotate(obj.rotation || 0);
+            context.strokeStyle = obj.color;
+            context.fillStyle = obj.color;
+            context.lineWidth = obj.size;
+            
+            switch (obj.type) {
+                case 'path':
+                    context.lineCap = 'round'; context.lineJoin = 'round';
+                    context.beginPath();
+                     if (obj.points && obj.points.length > 0) {
+                        context.moveTo(obj.points[0].x, obj.points[0].y);
+                        for (let i = 1; i < obj.points.length; i++) {
+                           context.lineTo(obj.points[i].x, obj.points[i].y);
+                        }
+                    }
+                    context.stroke();
+                    break;
+                case 'rect': context.strokeRect(-obj.width / 2, -obj.height / 2, obj.width, obj.height); break;
+                case 'circle': context.beginPath(); context.arc(0, 0, obj.radius, 0, 2 * Math.PI); context.stroke(); break;
+                case 'text': case 'postit':
+                    const bounds = getObjectBounds(obj);
+                    const w = bounds.width; const h = bounds.height;
+                    if(obj.type === 'postit'){
+                        context.fillStyle = '#FFFBEB'; context.strokeStyle = '#FBBF24'; context.lineWidth = 1;
+                        const side = Math.max(w, h);
+                        context.fillRect(-side/2, -side/2, side, side); context.strokeRect(-side/2, -side/2, side, side);
+                        context.fillStyle = obj.color;
+                    }
+                    context.font = `${obj.size}px Inter`;
+                    context.textAlign = 'center'; context.textBaseline = 'middle';
+                    wrapText(context, obj.text, 0, 0, w - (obj.type === 'postit' ? 20 : 0), obj.size);
+                    break;
+                case 'image':
+                    const img = objectImages[obj.id];
+                    if (img && img.complete) { context.drawImage(img, -obj.width/2, -obj.height/2, obj.width, obj.height); } 
+                    else if (!img) { 
+                        const newImg = new Image();
+                        newImg.onload = redrawCanvas;
+                        newImg.onerror = () => console.error("Failed to load image:", obj.src);
+                        newImg.src = obj.src;
+                        objectImages[obj.id] = newImg;
+                    }
+                    break;
+            }
+            context.restore();
+        };
+
+        function wrapText(context, text, x, y, maxWidth, lineHeight) {
+            const lines = text.split('\n');
+            const totalHeight = lines.length * lineHeight;
+            let currentY = y - totalHeight / 2 + lineHeight / 2;
+            lines.forEach(lineText => {
+                context.fillText(lineText, x, currentY);
+                currentY += lineHeight;
+            });
+        }
+
+        const drawSelectionUI = (context, obj) => {
+            const bounds = getObjectBounds(obj);
+            if (!bounds) return;
+            if (obj.type === 'postit') {
+                bounds.width = bounds.height = Math.max(bounds.width, bounds.height);
+            }
+            const handleSize = 8;
+            const padding = 4;
+            context.save();
+            context.translate(obj.x, obj.y);
+
+            let rotation = obj.rotation || 0;
+            if (obj.type === 'arrow') {
+                rotation = Math.atan2(obj.endY - obj.startY, obj.endX - obj.startX);
+            }
+            context.rotate(rotation);
+
+            context.strokeStyle = '#3b82f6'; context.lineWidth = 1;
+            context.setLineDash([4, 4]);
+            context.strokeRect(-bounds.width / 2 - padding, -bounds.height / 2 - padding, bounds.width + padding*2, bounds.height + padding*2);
+            context.setLineDash([]);
+            
+            context.fillStyle = '#fff'; context.strokeStyle = '#3b82f6'; context.lineWidth = 2;
+            
+            const resizeHandleX = bounds.width/2 + padding;
+            const resizeHandleY = bounds.height/2 + padding;
+            const rotateHandleX = bounds.width/2 + padding;
+            const rotateHandleY = -bounds.height/2 - padding;
+            
+            context.fillRect(resizeHandleX - handleSize/2, resizeHandleY - handleSize/2, handleSize, handleSize);
+            context.strokeRect(resizeHandleX - handleSize/2, resizeHandleY - handleSize/2, handleSize, handleSize);
+
+            if (obj.type !== 'arrow') {
+                context.beginPath();
+                context.arc(rotateHandleX, rotateHandleY, handleSize/2, 0, 2 * Math.PI);
+                context.fill(); context.stroke();
+            }
+            context.restore();
+        };
+        
+        const getLocalPos = (pos, obj) => {
+            let rotation = obj.rotation || 0;
+            if (obj.type === 'arrow') {
+                rotation = Math.atan2(obj.endY - obj.startY, obj.endX - obj.startX);
+            }
+            const angle = -rotation;
+            const dx = pos.x - obj.x;
+            const dy = pos.y - obj.y;
+            return {
+                x: dx * Math.cos(angle) - dy * Math.sin(angle),
+                y: dx * Math.sin(angle) + dy * Math.cos(angle),
+            };
+        };
+
+        function getObjectBounds(obj) {
+            if (!obj) return null;
+            let width, height;
+            switch(obj.type) {
+                case 'path': {
+                    if (!obj.points || obj.points.length < 2) return { width: obj.size, height: obj.size };
+                    const xs = obj.points.map(p => p.x);
+                    const ys = obj.points.map(p => p.y);
+                    width = Math.max(...xs) - Math.min(...xs);
+                    height = Math.max(...ys) - Math.min(...ys);
+                    break;
+                }
+                case 'circle':
+                    width = height = obj.radius * 2;
+                    break;
+                case 'arrow':
+                    width = Math.hypot(obj.endX - obj.startX, obj.endY - obj.startY);
+                    height = obj.size;
+                    break;
+                case 'text':
+                case 'postit':
+                    if (!obj.text || typeof obj.text.split !== 'function') {
+                        return { width: 0, height: 0 };
+                    }
+                    ctx.font = `${obj.size}px Inter`;
+                    const lines = obj.text.split('\n');
+                    const textWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+                    width = textWidth;
+                    height = obj.size * lines.length;
+                    if(obj.type === 'postit') {
+                        let textDimension = Math.max(textWidth, height) + 40;
+                        width = Math.max(obj.width, textDimension);
+                        height = Math.max(obj.height, textDimension);
+                        width = height = Math.max(width, height);
+                    }
+                    break;
+                default:
+                    width = obj.width;
+                    height = obj.height;
+                    break;
+            }
+            return { width: Math.max(width, 1), height: Math.max(height, 1) };
+        }
+
+        const findObjectAt = (pos) => {
+            const hitThreshold = 5;
+            for (let i = canvasObjects.length - 1; i >= 0; i--) {
+                const obj = canvasObjects[i];
+                const localPos = getLocalPos(pos, obj);
+                const bounds = getObjectBounds(obj);
+                if (!bounds) continue;
+                 if (obj.type === 'postit') {
+                    bounds.width = bounds.height = Math.max(bounds.width, bounds.height);
+                }
+
+                switch(obj.type) {
+                    case 'path':
+                         for (let j = 0; j < obj.points.length - 1; j++) {
+                            const p1 = { x: obj.points[j].x + obj.x, y: obj.points[j].y + obj.y };
+                            const p2 = { x: obj.points[j+1].x + obj.x, y: obj.points[j+1].y + obj.y };
+                            if (pointToLineSegmentDistance(pos, p1, p2) < obj.size / 2 + hitThreshold) return obj;
+                        }
+                        break;
+                    case 'arrow':
+                        if(pointToLineSegmentDistance(pos, {x: obj.startX, y: obj.startY}, {x: obj.endX, y: obj.endY}) < obj.size / 2 + hitThreshold) return obj;
+                        break;
+                    case 'circle':
+                        const distFromCenter = Math.hypot(localPos.x, localPos.y);
+                        if (Math.abs(distFromCenter - obj.radius) < obj.size / 2 + hitThreshold) return obj;
+                        break;
+                    case 'rect':
+                        const hw = bounds.width / 2;
+                        const hh = bounds.height / 2;
+                        if (
+                            (Math.abs(Math.abs(localPos.x) - hw) < hitThreshold && Math.abs(localPos.y) <= hh) ||
+                            (Math.abs(Math.abs(localPos.y) - hh) < hitThreshold && Math.abs(localPos.x) <= hw)
+                        ) {
+                            return obj;
+                        }
+                        break;
+                    default: 
+                        if (Math.abs(localPos.x) <= bounds.width / 2 && Math.abs(localPos.y) <= bounds.height / 2) {
+                            return obj;
+                        }
+                        break;
+                }
+            }
+            return null;
+        };
+        
+        const pointToLineSegmentDistance = (p, a, b) => {
+            const l2 = (b.x - a.x)**2 + (b.y - a.y)**2;
+            if (l2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+            let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            const projection = { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) };
+            return Math.hypot(p.x - projection.x, p.y - projection.y);
+        };
+
+        function getActiveHandle(pos, obj) {
+            if (obj.type === 'arrow') return null; 
+            const bounds = getObjectBounds(obj);
+            if (!bounds) return null;
+             if (obj.type === 'postit') {
+                bounds.width = bounds.height = Math.max(bounds.width, bounds.height);
+            }
+            const handleSize = 16;
+            const padding = 4;
+            const localPos = getLocalPos(pos, obj);
+            const resizeHandlePos = { x: bounds.width / 2 + padding, y: bounds.height / 2 + padding };
+            const rotateHandlePos = { x: bounds.width / 2 + padding, y: -bounds.height / 2 - padding };
+
+            if (Math.hypot(localPos.x - resizeHandlePos.x, localPos.y - resizeHandlePos.y) < handleSize / 2) return 'resize';
+            if (Math.hypot(localPos.x - rotateHandlePos.x, localPos.y - rotateHandlePos.y) < handleSize / 2) return 'rotate';
+            return null;
+        }
+
+        const deleteObjectById = (id) => {
+            const index = canvasObjects.findIndex(o => o.id === id);
+            if (index > -1) {
+                canvasObjects.splice(index, 1);
+                if (selectedObject && selectedObject.id === id) selectedObject = null;
+                redrawCanvas();
+            }
+        };
+
+        const handleMouseDown = (e) => {
+            if (e.target !== canvas) return;
+            const pos = getMousePos(e);
+            startX = pos.x; startY = pos.y;
+            lastX = startX; lastY = startY;
+            
+            activeHandle = selectedObject ? getActiveHandle(pos, selectedObject) : null;
+            if (activeHandle) {
+                isResizing = activeHandle === 'resize';
+                isRotating = activeHandle === 'rotate';
+                originalObjectState = JSON.parse(JSON.stringify(selectedObject));
+            } else {
+                const foundObject = findObjectAt(pos);
+                if (foundObject) {
+                    setActiveTool('select-tool');
+                    selectedObject = foundObject;
+                    isDragging = true;
+                } else if (activeTool !== 'select') {
+                    selectedObject = null;
+                    isDrawing = true;
+                    const id = generateUniqueId();
+                    if (activeTool === 'pen') {
+                        currentlyDrawingObject = { id, type: 'path', color: drawingColor, size: drawingSize, points: [{x: startX, y: startY}], x:0, y:0 };
+                        canvasObjects.push(currentlyDrawingObject);
+                        broadcastData('create', currentlyDrawingObject);
+                    } else if (activeTool === 'text' || activeTool === 'postit') {
+                        showTextModal(pos.x, pos.y, activeTool === 'postit');
+                        isDrawing = false;
+                    } else {
+                        currentlyDrawingObject = { id, type: activeTool, color: drawingColor, size: drawingSize, x: startX, y: startY, rotation: 0 };
+                        if (activeTool === 'rect') { currentlyDrawingObject.width = 0; currentlyDrawingObject.height = 0; }
+                        else if (activeTool === 'circle') { currentlyDrawingObject.radius = 0; }
+                        else if (activeTool === 'arrow') Object.assign(currentlyDrawingObject, { startX, startY, endX: startX, endY: startY });
+                    }
+                }
+            }
+            if(isDragging || isResizing || isRotating || isDrawing) app.classList.add('is-interacting');
+            redrawCanvas();
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+        };
+
+        const handleMouseMove = (e) => {
+            const pos = getMousePos(e);
+            if (isDragging && selectedObject) {
+                const dx = pos.x - lastX;
+                const dy = pos.y - lastY;
+                selectedObject.x += dx; selectedObject.y += dy;
+                 if (selectedObject.type === 'arrow') {
+                    selectedObject.startX += dx; selectedObject.startY += dy;
+                    selectedObject.endX += dx; selectedObject.endY += dy;
+                }
+            } else if (isResizing && selectedObject) {
+                const localStartPos = getLocalPos({ x: startX, y: startY }, originalObjectState);
+                const localCurrentPos = getLocalPos(pos, originalObjectState);
+                let scaleX = Math.abs(localStartPos.x) > 1 ? Math.abs(localCurrentPos.x / localStartPos.x) : 1;
+                let scaleY = Math.abs(localStartPos.y) > 1 ? Math.abs(localCurrentPos.y / localStartPos.y) : 1;
+                const scale = Math.max(scaleX, scaleY);
+                switch(selectedObject.type) {
+                    case 'rect': case 'image':
+                        if (e.shiftKey) { 
+                            selectedObject.width = originalObjectState.width * scaleX;
+                            selectedObject.height = originalObjectState.height * scaleY;
+                        } else { 
+                            const proportionalScale = Math.max(scaleX, scaleY);
+                            selectedObject.width = originalObjectState.width * proportionalScale;
+                            selectedObject.height = originalObjectState.height * proportionalScale;
+                        }
+                        break;
+                    case 'postit':
+                        selectedObject.size = Math.max(12, originalObjectState.size * scale);
+                        const newSide = originalObjectState.width * scale;
+                        selectedObject.width = newSide;
+                        selectedObject.height = newSide;
+                        break;
+                    default: 
+                        if (selectedObject.type === 'circle') selectedObject.radius = originalObjectState.radius * scale;
+                        else if (selectedObject.type === 'text') selectedObject.size = Math.max(12, originalObjectState.size * scale);
+                        else if (selectedObject.type === 'path' || selectedObject.type === 'arrow') selectedObject.size = Math.max(2, originalObjectState.size * scale);
+                        break;
+                }
+            } else if (isRotating && selectedObject) {
+                selectedObject.rotation = Math.atan2(pos.y - selectedObject.y, pos.x - selectedObject.x) - Math.atan2(startY - selectedObject.y, startX - selectedObject.y) + originalObjectState.rotation;
+            } else if (isDrawing && currentlyDrawingObject) {
+                const obj = currentlyDrawingObject;
+                if(obj.type === 'path') {
+                    obj.points.push(pos);
+                } else if(obj.type === 'rect') {
+                    obj.width = Math.abs(pos.x - startX);
+                    obj.height = Math.abs(pos.y - startY);
+                    obj.x = startX + (pos.x - startX) / 2;
+                    obj.y = startY + (pos.y - startY) / 2;
+                } else if(obj.type === 'circle') {
+                    obj.radius = Math.hypot(pos.x - startX, pos.y - startY) / 2;
+                    obj.x = startX + (pos.x - startX) / 2;
+                    obj.y = startY + (pos.y - startY) / 2;
+                } else if(obj.type === 'arrow') {
+                    obj.endX = pos.x;
+                    obj.endY = pos.y;
+                    obj.x = (obj.startX + obj.endX) / 2;
+                    obj.y = (obj.startY + obj.endY) / 2;
+                }
+            }
+            
+            const now = Date.now();
+            if(now - lastBroadcastTime > broadcastInterval) {
+                 if (isDrawing && currentlyDrawingObject && currentlyDrawingObject.type === 'pen') {
+                    broadcastData('update', currentlyDrawingObject);
+                } else if ((isDragging || isResizing || isRotating) && selectedObject) {
+                    broadcastData('update', selectedObject);
+                }
+                lastBroadcastTime = now;
+            }
+
+            lastX = pos.x; lastY = pos.y;
+            redrawCanvas();
+        };
+
+        const handleMouseUp = (e) => {
+            if (isDrawing && currentlyDrawingObject) {
+                 if (currentlyDrawingObject.type === 'path') {
+                    const xs = currentlyDrawingObject.points.map(p => p.x);
+                    const ys = currentlyDrawingObject.points.map(p => p.y);
+                    const minX = Math.min(...xs); const minY = Math.min(...ys);
+                    const maxX = Math.max(...xs); const maxY = Math.max(...ys);
+                    currentlyDrawingObject.x = minX + (maxX-minX) / 2;
+                    currentlyDrawingObject.y = minY + (maxY-minY) / 2;
+                    currentlyDrawingObject.points = currentlyDrawingObject.points.map(p => ({ x: p.x - currentlyDrawingObject.x, y: p.y - currentlyDrawingObject.y }));
+                    broadcastData('update', currentlyDrawingObject);
+                } else {
+                    canvasObjects.push(currentlyDrawingObject);
+                    broadcastData('create', currentlyDrawingObject);
+                }
+            } else if ((isDragging || isResizing || isRotating) && selectedObject) {
+                broadcastData('update', selectedObject);
+            }
+            
+            isDrawing = isDragging = isResizing = isRotating = false;
+            activeHandle = null;
+            currentlyDrawingObject = null;
+            originalObjectState = null;
+            app.classList.remove('is-interacting');
+            redrawCanvas(); 
+
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+
+        // Code-splitting opportunity: Modal logic can be loaded on demand when a modal is first triggered.
+        const showTextModal = (x, y, isPostit = false) => {
+            textModal.classList.remove('hidden');
+            const input = textModal.querySelector('#text-tool-input');
+            input.value = ''; input.focus();
+            textModal.dataset.x = x; textModal.dataset.y = y; textModal.dataset.isPostit = isPostit;
+        };
+        
+        const showConfirmModal = (message, onConfirm) => {
+            confirmModal.querySelector('#confirm-message').textContent = message;
+            confirmModal.classList.remove('hidden'); confirmCallback = onConfirm;
+        };
+
+        const setActiveTool = (tool) => {
+            activeTool = tool.replace('-tool', '');
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`${activeTool}-tool`)?.classList.add('active');
+            
+            if (activeTool === 'text' || activeTool === 'postit') {
+                sizeSlider.min = 12;
+                if (sizeSlider.value < 12) sizeSlider.value = drawingSize = 12;
+            } else { sizeSlider.min = 2; }
+            if (activeTool !== 'select') selectedObject = null;
+            redrawCanvas();
+        };
+
+        // --- P2P and Data Sync ---
+        // Code-splitting opportunity: The entire PeerJS connection logic can be in a separate module.
+        function initializePeer() {
+            // Unused CSS/JS Note: PeerJS might not be used if the user is solo. Dynamic import would be ideal.
+            peer = new Peer();
+            const copyBtn = document.getElementById('copy-invitation-btn');
+            peer.on('open', id => {
+                document.getElementById('connection-status').textContent = '';
+                document.getElementById('connection-info').textContent = "This page provides a direct peer-to-peer connection without a server.";
+                copyBtn.disabled = false;
+                document.getElementById('connect-btn').disabled = false;
+            });
+            peer.on('connection', setupConnection);
+            peer.on('call', async (call) => {
+                console.log(`Incoming call from ${call.peer}`);
+                playSound('call');
+                try {
+                    await startLocalVideo();
+                    call.answer(localStream);
+                    setupMediaConnection(call);
+                } catch (err) { console.error("Failed to get local stream for answering call", err); }
+            });
+            peer.on('error', err => {
+                console.error("PeerJS error:", err);
+                document.getElementById('connection-status').innerHTML = `<span class="text-red-500">Error: ${err.type}</span>`;
+            });
+        }
+        
+        function setupConnection(conn) {
+            console.log(`Incoming connection from ${conn.peer}`);
+            document.getElementById('connection-status').innerHTML = `<span class="text-green-600 font-medium">Connected to ${conn.peer.substring(0,6)}...</span>`;
+            
+            videoCallUI.classList.remove('hidden');
+            preConnectionUI.classList.add('hidden');
+            
+            playSound('connect');
+            dataConnections[conn.peer] = conn;
+            conn.on('open', () => {
+                console.log(`Connection to ${conn.peer} opened. Sending full sync.`);
+                conn.send({ type: 'sync', payload: canvasObjects });
+            });
+            conn.on('data', handleReceivedData);
+            conn.on('close', () => {
+                 delete dataConnections[conn.peer];
+                 if (mediaConnections[conn.peer]) mediaConnections[conn.peer].close();
+
+                 if(Object.keys(dataConnections).length === 0) {
+                     document.getElementById('connection-status').innerHTML = `<span class="text-yellow-500 font-medium">Peer disconnected.</span>`;
+                     videoCallUI.classList.add('hidden');
+                     preConnectionUI.classList.remove('hidden');
+                     endCall();
+                 }
+            });
+        }
+        
+        function setupMediaConnection(call) {
+            console.log(`Setting up media stream for ${call.peer}`);
+            mediaConnections[call.peer] = call;
+            call.on('stream', (stream) => {
+                remoteVideo.srcObject = stream;
+                remoteVideo.classList.remove('is-empty');
+                remoteVideo.play();
+                startCallBtn.classList.add('hidden');
+                endCallBtn.classList.remove('hidden');
+            });
+            call.on('close', () => {
+                console.log(`Media connection with ${call.peer} closed.`);
+                remoteVideo.srcObject = null;
+                remoteVideo.classList.add('is-empty');
+                delete mediaConnections[call.peer];
+                if (Object.keys(mediaConnections).length === 0) {
+                    startCallBtn.classList.remove('hidden');
+                    endCallBtn.classList.add('hidden');
+                }
+            });
+             call.on('error', (err) => { console.error("Media call error:", err); });
+        }
+
+        function handleReceivedData(data) {
+            const { type, payload, senderId } = data;
+            if (senderId === peer.id) return;
+
+            let needsRedraw = true;
+            switch(type) {
+                case 'sync':
+                    canvasObjects = payload;
+                    payload.forEach(obj => {
+                        if(obj.type === 'image' && !objectImages[obj.id]) {
+                            const newImg = new Image(); newImg.onload = redrawCanvas; newImg.src = obj.src; objectImages[obj.id] = newImg;
+                        }
+                    });
+                    break;
+                case 'create': canvasObjects.push(payload); break;
+                case 'update':
+                    const index = canvasObjects.findIndex(o => o.id === payload.id);
+                    if(index > -1) canvasObjects[index] = payload;
+                    else canvasObjects.push(payload);
+                    break;
+                case 'delete': deleteObjectById(payload.id); break;
+                case 'clear': canvasObjects = []; selectedObject = null; break;
+                case 'chat':
+                    const chatPanel = document.getElementById('chat-panel');
+                    if(chatPanel.classList.contains('panel-collapsed')) chatPanel.querySelector('.panel-header').classList.add('glowing');
+                    appendChatMessage(payload.message, senderId);
+                    playSound('chat');
+                    needsRedraw = false;
+                    break;
+                default: needsRedraw = false; break;
+            }
+            if(needsRedraw) redrawCanvas();
+        }
+
+        async function startLocalVideo() {
+            if (localStream) return;
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+                localVideo.play();
+            } catch (err) {
+                console.error("Error accessing media devices.", err);
+                alert("Could not access camera/microphone. Please check permissions.");
+                throw err;
+            }
+        }
+        
+        async function startCall() {
+            try {
+                await startLocalVideo();
+                Object.values(dataConnections).forEach(conn => {
+                    if (!mediaConnections[conn.peer]) {
+                        console.log(`Calling ${conn.peer}`);
+                        const call = peer.call(conn.peer, localStream);
+                        setupMediaConnection(call);
+                    }
+                });
+            } catch (err) { console.error("Could not start call", err); }
+        }
+
+        function endCall() {
+            Object.values(mediaConnections).forEach(call => call.close());
+            mediaConnections = {};
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+                localVideo.srcObject = null;
+            }
+            remoteVideo.srcObject = null;
+            remoteVideo.classList.add('is-empty');
+            startCallBtn.classList.remove('hidden');
+            endCallBtn.classList.add('hidden');
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('copy-invitation-btn').addEventListener('click', () => {
+            if (!peer || !peer.id) return;
+            const invitationText = `Join me here to collaborate on an impromptu whiteboard. It's a direct peer-to-peer connection without a server. Enter the ID ${peer.id} on https://pirillo.com/arcade/canvas-connect.html while I'm also online!`;
+            const textArea = document.createElement("textarea");
+            textArea.value = invitationText;
+            textArea.style.position = "fixed"; textArea.style.top = "0"; textArea.style.left = "0"; textArea.style.opacity = "0";
+            document.body.appendChild(textArea);
+            textArea.focus(); textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                const copyBtn = document.getElementById('copy-invitation-btn');
+                if (successful) {
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = 'Copied to Clipboard!'; copyBtn.disabled = true;
+                    setTimeout(() => { copyBtn.textContent = originalText; copyBtn.disabled = false; }, 2000);
+                }
+            } catch (err) { console.error('Fallback: Oops, unable to copy', err); }
+            document.body.removeChild(textArea);
+        });
+        document.getElementById('export-png').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = `canvas-connect-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+        document.getElementById('connect-btn').addEventListener('click', () => {
+            const peerId = document.getElementById('peer-id-input').value.trim();
+            if (peerId && peerId !== peer.id && !dataConnections[peerId]) {
+                document.getElementById('connection-status').innerHTML = `<span class="text-gray-500">Connecting to ${peerId.substring(0,6)}...</span>`;
+                const conn = peer.connect(peerId);
+                setupConnection(conn);
+            }
+        });
+        document.getElementById('submit-text').addEventListener('click', () => {
+            const textInput = textModal.querySelector('#text-tool-input');
+            const text = textInput.value; 
+            if (!text) { textModal.classList.add('hidden'); return; }
+            const isPostit = textModal.dataset.isPostit === 'true';
+            const size = parseInt(sizeSlider.value);
+            ctx.font = `${size}px Inter`;
+            const lines = text.split('\n');
+            const textWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+            const textHeight = size * lines.length;
+            let width, height;
+            if (isPostit) {
+                const side = Math.max(150, textWidth + 40, textHeight + 40);
+                width = height = side;
+            } else { width = textWidth; height = textHeight; }
+            const newObject = { id: generateUniqueId(), text, x: +textModal.dataset.x, y: +textModal.dataset.y, rotation: 0, color: drawingColor, size, type: isPostit ? 'postit' : 'text', width, height };
+            canvasObjects.push(newObject);
+            broadcastData('create', newObject);
+            redrawCanvas();
+            textModal.classList.add('hidden');
+        });
+        document.getElementById('image-upload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const src = event.target.result;
+                const img = new Image();
+                img.onload = () => {
+                    const newImage = { id: generateUniqueId(), type: 'image', src, x: canvas.width / (2 * (window.devicePixelRatio || 1)), y: canvas.height / (2 * (window.devicePixelRatio || 1)), width: 200, height: img.height * (200 / img.width), rotation: 0 };
+                    objectImages[newImage.id] = img;
+                    canvasObjects.push(newImage);
+                    broadcastData('create', newImage);
+                    redrawCanvas();
+                };
+                img.src = src;
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+        });
+        document.getElementById('clear-canvas').addEventListener('click', () => showConfirmModal('This will clear the canvas for everyone.', () => {
+            canvasObjects = []; selectedObject = null;
+            redrawCanvas(); broadcastData('clear', {});
+        }));
+        document.addEventListener('keydown', (e) => {
+            if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+            if (e.key === 'Escape') { textModal.classList.add('hidden'); confirmModal.classList.add('hidden'); }
+            if ((e.key === 'Backspace' || e.key === 'Delete') && selectedObject) {
+                e.preventDefault();
+                broadcastData('delete', { id: selectedObject.id });
+                deleteObjectById(selectedObject.id);
+            }
+        });
+        const appendChatMessage = (message, sender) => {
+            const msgEl = document.createElement('div');
+            msgEl.textContent = message;
+            msgEl.className = `p-2 rounded-lg mb-2 w-fit max-w-[90%] break-words ${sender === peer.id ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800'}`;
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.appendChild(msgEl);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        };
+        const sendChatMessage = () => {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if(message && peer) {
+                appendChatMessage(message, peer.id);
+                broadcastData('chat', { message });
+                input.value = '';
+            }
+        };
+
+        // --- Generic UI Listeners & Init ---
+        canvas.addEventListener('mousedown', handleMouseDown);
+        document.getElementById('send-chat').addEventListener('click', sendChatMessage);
+        document.getElementById('chat-input').addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } });
+        document.getElementById('image-tool').addEventListener('click', () => document.getElementById('image-upload').click());
+        document.getElementById('cancel-text').addEventListener('click', () => textModal.classList.add('hidden'));
+        document.getElementById('confirm-ok-btn').addEventListener('click', () => { if (typeof confirmCallback === 'function') confirmCallback(); confirmModal.classList.add('hidden'); });
+        document.getElementById('confirm-cancel-btn').addEventListener('click', () => confirmModal.classList.add('hidden'));
+        document.querySelectorAll('.tool-btn').forEach(btn => btn.addEventListener('click', () => setActiveTool(btn.id)));
+        document.querySelectorAll('.panel-header').forEach(header => header.addEventListener('click', (e) => {
+            const panel = e.currentTarget.closest('.floating-panel'); panel.classList.toggle('panel-collapsed');
+            if(panel.id === 'chat-panel' && !panel.classList.contains('panel-collapsed')) panel.querySelector('.panel-header').classList.remove('glowing');
+        }));
+        sizeSlider.addEventListener('input', (e) => drawingSize = parseInt(e.target.value));
+        document.getElementById('color-picker').addEventListener('input', (e) => drawingColor = e.target.value);
+        startCallBtn.addEventListener('click', startCall);
+        endCallBtn.addEventListener('click', endCall);
+        window.addEventListener('resize', resizeCanvas);
+        initializePeer();
+        resizeCanvas();
+        setActiveTool('pen-tool');
+    });
+    </script>
+</body>
+</html>
