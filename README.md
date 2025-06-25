@@ -7,7 +7,6 @@ Collaborate in real-time with Canvas Connect, a peer-to-peer digital whiteboard.
 
 ![Screenshot](https://github.com/ChrisPirillo/canvas-connect/blob/main/assets/screenshot.png?raw=true)
 
-
 ![Screenshot](https://raw.githubusercontent.com/ChrisPirillo/canvas-connect/main/assets/screenshot.png)
 
 * Try it now: [https://pirillo.com/arcade/canvas-connect.html](https://pirillo.com/arcade/canvas-connect.html)
